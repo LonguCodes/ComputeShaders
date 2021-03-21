@@ -80,6 +80,7 @@
   <ItemGroup>
     <None Include="compute_shader.glsl" />
     <None Include="fragment_shader.glsl" />
+    <None Include="geometry_shader.glsl" />
     <None Include="vertex_shader.glsl" />
   </ItemGroup>
   <ItemGroup>

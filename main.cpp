@@ -14,15 +14,15 @@ using namespace std::chrono;
 
 char* shaderLoadSource( const char* filePath );
 unsigned int loadComputeShader( const char* filePath );
-unsigned int loadDisplayShader( const char* vertex, const char* fragment );
+unsigned int loadDisplayShader( const char* vertex, const char* fragment, const char* geometry );
 
-#define UPDATE_RATE 50
-#define POINT_SIZE 10
-#define MAX_SPEED 50
-#define POINT_COUNT 3000
+#define UPDATE_RATE 500
+#define POINT_SIZE 5
+#define MAX_SPEED 500
+#define POINT_COUNT 200
 
 
-#define SCREEN_WIDTH 3000
+#define SCREEN_WIDTH 1000
 #define SCREEN_HEIGHT 1000
 
 
@@ -59,8 +59,13 @@ int main( int argc, char** argv )
 	glewInit();
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	glPointSize( POINT_SIZE );
+	glLineWidth( 1 );
+
+	
 	computeShader = loadComputeShader( "compute_shader.glsl" );
-	displayShader = loadDisplayShader( "vertex_shader.glsl", "fragment_shader.glsl" );
+	displayShader = loadDisplayShader( "vertex_shader.glsl", "fragment_shader.glsl","geometry_shader.glsl" );
+
+	
 	for ( int i = 0 ; i < POINT_COUNT ; ++i )
 	{
 		positions[i].x = ( float( rand() ) / RAND_MAX  ) * SCREEN_WIDTH ;
@@ -71,6 +76,12 @@ int main( int argc, char** argv )
 	}
 
 	glUseProgram( computeShader );
+
+	glUniform1i( glGetUniformLocation( computeShader, "updateRate" ), UPDATE_RATE );
+	glUniform1f( glGetUniformLocation( computeShader, "pointSize" ), POINT_SIZE );
+
+	glUniform2i( glGetUniformLocation( computeShader, "boxSize" ), SCREEN_WIDTH, SCREEN_HEIGHT );
+	
 	glGenBuffers( 1, &positionBuffer );
 	glGenBuffers( 1, &velocityBuffer );
 
@@ -80,7 +91,12 @@ int main( int argc, char** argv )
 	glBindBuffer( GL_SHADER_STORAGE_BUFFER, velocityBuffer );
 	glBufferData( GL_SHADER_STORAGE_BUFFER, sizeof( v2 ) * POINT_COUNT, velocities, GL_STREAM_DRAW );
 	glBindBufferBase( GL_SHADER_STORAGE_BUFFER, 2, velocityBuffer );
+
+
 	glUseProgram( displayShader );
+
+	glUniform1f( glGetUniformLocation( computeShader, "pointSize" ), POINT_SIZE );
+
 
 	glUniformMatrix4fv( glGetUniformLocation( displayShader, "P" ), 1, false, ( const GLfloat* )&P );
 
@@ -98,7 +114,7 @@ int main( int argc, char** argv )
 
 
 	glBindVertexArray( 0 );
-
+	
 
 	glutTimerFunc( 1000 / UPDATE_RATE, timer, 0 );
 	glutDisplayFunc( display );
@@ -112,10 +128,6 @@ void timer( int value )
 	glUseProgram( computeShader );
 
 
-	glUniform1i( glGetUniformLocation( computeShader, "updateRate" ), UPDATE_RATE );
-	glUniform1f( glGetUniformLocation( computeShader, "pointSize" ), POINT_SIZE );
-
-	glUniform2i( glGetUniformLocation( computeShader, "boxSize" ), SCREEN_WIDTH,SCREEN_HEIGHT );
 
 
 	glDispatchCompute( POINT_COUNT, 1, 1 );
@@ -167,28 +179,39 @@ unsigned int loadComputeShader( const char* filePath )
 	return shaderProgram;
 }
 
-unsigned int loadDisplayShader( const char* vertex, const char* fragment )
+unsigned int loadDisplayShader( const char* vertex, const char* fragment, const char* geometry )
 {
 	unsigned int vertexShader = glCreateShader( GL_VERTEX_SHADER );
 	unsigned int fragmentShader = glCreateShader( GL_FRAGMENT_SHADER );
+	unsigned int geometryShader = glCreateShader( GL_GEOMETRY_SHADER );
 
 	char* vertexShaderSource = shaderLoadSource( vertex );
 	char* fragmentShaderSource = shaderLoadSource( fragment );
+	char* geometryShaderSource = shaderLoadSource( geometry );
 
-	if ( !fragmentShaderSource || !vertexShaderSource )
+	if ( !fragmentShaderSource || !vertexShaderSource|| !geometryShader )
 		return -1;
 
 	glShaderSource( vertexShader, 1, ( const char** )&vertexShaderSource, NULL );
-	glShaderSource( fragmentShader, 1, ( const char** )&fragmentShaderSource, NULL );
+	glShaderSource( fragmentShader, 1, ( const char** ) &fragmentShaderSource, NULL );
+	glShaderSource( geometryShader, 1, ( const char** )&geometryShaderSource, NULL );
+	
 	glCompileShader( vertexShader );
 	glCompileShader( fragmentShader );
+	glCompileShader( geometryShader );
 
 	unsigned int shaderProgram = glCreateProgram();
+	
 	glAttachShader( shaderProgram, vertexShader );
 	glAttachShader( shaderProgram, fragmentShader );
+	glAttachShader( shaderProgram, geometryShader );
+	
 	glLinkProgram( shaderProgram );
+	
 	glDeleteShader( vertexShader );
 	glDeleteShader( fragmentShader );
+	glDeleteShader( geometryShader );
+	
 	return shaderProgram;
 }
 

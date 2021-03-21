@@ -51,7 +51,7 @@ void main()
         v.y = -v.y;
     }
 
-    p +=v* updateRate/1000;
+    p +=v/updateRate;
     
 
     for(int i=0; i<gl_NumWorkGroups.x;i++){
@@ -59,26 +59,16 @@ void main()
             continue;
         vec2 p2 = vec2(pos[i].x,pos[i].y);
         vec2 v2 = vec2(vel[i].x,vel[i].y);
-        float dstX = abs(p2.x - p.x);
-        float dstY = abs(p2.y - p.y);
+        float dst = distance(p,p2);
         vec2 center = (p2 + p)/2.0;
-        vec2 diff = p2 - p;
-        if(dstX<= pointSize&& dstY <= pointSize)
+        vec2 diff = normalize(p2 - p);
+        if(dst <= pointSize*2)
         {
-            if(abs(p2.x - p.x) > abs(p2.y-p.y)){
-                p2.x =sign(diff.x)* pointSize/2*1.01  + center.x;
-                p.x =-sign(diff.x)* pointSize/2*1.01  + center.x;
-                float sr = (abs(v.x)+abs(v2.x))/2;
-                v.x = -sign(v.x) * sr;
-                v2.x = -sign(v2.x) * sr;
-            }
-            else{
-                p2.y =sign(diff.y)* pointSize/21.01  + center.y;
-                p.y =-sign(diff.y)* pointSize/2*1.01 + center.y;
-                float sr = (abs(v.y)+abs(v2.y))/2;
-                v.y = -sign(v.y) * sr;
-                v2.y = -sign(v2.y) * sr;
-            }
+            p = center - diff*pointSize*1.01;
+    
+            v = -diff *length(v);
+     
+            
             //pos[i].x = p2.x;
             //pos[i].y = p2.y;
             //vel[i].x = v2.x;
