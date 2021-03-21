@@ -42,12 +42,7 @@ unsigned int VAO;
 
 unsigned int computeShader;
 unsigned int displayShader;
-// glm::mat4 P = {
-// 	{2.0f / SCREEN_WIDTH, 0, 0, -1},
-// 	{0, 2.0f/SCREEN_HEIGHT , 0, -1},
-// 	{0, 0, 0, 0},
-// 	{0, 0, 0, 1}
-// };
+
 glm::mat4 P =  glm::ortho( 0.0f, (float)SCREEN_WIDTH, 0.0f, (float )SCREEN_HEIGHT ) ;
 void display();
 void timer( int value );
@@ -86,14 +81,7 @@ int main( int argc, char** argv )
 	glBufferData( GL_SHADER_STORAGE_BUFFER, sizeof( v2 ) * POINT_COUNT, velocities, GL_STREAM_DRAW );
 	glBindBufferBase( GL_SHADER_STORAGE_BUFFER, 2, velocityBuffer );
 	glUseProgram( displayShader );
-	for ( int i = 0 ; i < 4 ; ++i )
-	{
-		for ( int j = 0 ; j < 4 ; j++ )
-		{
-			std::cout << P[i][j] << '\t';
-		}
-		std::cout << std::endl;
-	}
+
 	glUniformMatrix4fv( glGetUniformLocation( displayShader, "P" ), 1, false, ( const GLfloat* )&P );
 
 	glGenVertexArrays( 1, &VAO );
